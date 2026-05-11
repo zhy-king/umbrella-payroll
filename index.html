@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雨伞厂薪资计算器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=Noto+Serif+SC:wght@400;600;700;900&display=swap');
+
+  :root {
+    --bg: #f7f3ec;
+    --surface: #fefcf8;
+    --surface-alt: #f0ebe0;
+    --ink: #1a1a2e;
+    --ink-light: #5a5a72;
+    --ink-lighter: #8a8a9a;
+    --red: #c23b22;
+    --gold: #c8963e;
+    --gold-dark: #8b6914;
+    --navy: #1a2744;
+    --navy-light: #2c3e6b;
+    --teal: #2d6a4f;
+    --teal-light: #40916c;
+    --border: #d4c8b5;
+    --border-light: #e8dfd2;
+    --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+    --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+    --shadow-lg: 0 12px 40px rgba(26,26,46,0.12);
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(200,150,62,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 90%, rgba(194,59,34,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 50%, rgba(45,106,79,0.03) 0%, transparent 70%);
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; opacity: 0.025; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .app { position:relative; z-index:1; max-width:1280px; margin:0 auto; padding:24px 20px 60px; }
+
+  /* ── Header ── */
+  .header { text-align: center; padding: 40px 20px 32px; }
+  .header-badge {
+    display: inline-block; font-family: 'Noto Serif SC', serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+    color: var(--red); border: 1.5px solid var(--red);
+    padding: 6px 18px; border-radius: 2px; margin-bottom: 20px;
+    background: rgba(194,59,34,0.03);
+  }
+  .header h1 {
+    font-family: 'Noto Serif SC', serif; font-weight: 900;
+    font-size: 2.6rem; letter-spacing: 0.04em; color: var(--navy);
+    margin-bottom: 8px; line-height: 1.2;
+  }
+  .header h1 .dot { color: var(--red); }
+  .header .subtitle { font-size: 0.9rem; color: var(--ink-light); letter-spacing: 0.06em; }
+  .header::after {
+    content: ''; display: block; width: 60px; height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    margin: 24px auto 0; border-radius: 2px;
+  }
+
+  /* ── Layout ── */
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px; margin-bottom: 20px;
+  }
+  @media (max-width: 1000px) { .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    position: relative; overflow: hidden;
+    transition: box-shadow 0.25s, transform 0.25s;
+  }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .card::before {
+    content: ''; position: absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--navy), var(--teal));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .card:hover::before { opacity: 1; }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; gap: 10px; flex-wrap: wrap;
+  }
+  .card-title {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700; font-size: 1.05rem; color: var(--navy);
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .card-count {
+    font-size: 0.75rem; color: var(--ink-lighter);
+    background: var(--surface-alt); padding: 3px 10px;
+    border-radius: 100px; font-weight: 500;
+  }
+
+  /* ── Form ── */
+  .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .input {
+    flex: 1; padding: 9px 12px; min-width:0;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'Noto Sans SC', sans-serif; font-size: 0.88rem;
+    color: var(--ink); background: var(--surface);
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  .input:focus {
+    border-color: var(--navy-light);
+    box-shadow: 0 0 0 3px rgba(26,39,68,0.06);
+  }
+  .input::placeholder { color: var(--ink-lighter); }
+  select.input {
+    appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5a72' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    padding-right: 36px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 9px 18px; border: none; border-radius: var(--radius-sm);
+    font-family: 'Noto Sans SC', sans-serif; font-size: 0.85rem; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.02em;
+    transition: all 0.2s; white-space: nowrap; user-select: none;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-primary:hover { background: var(--navy-light); box-shadow: var(--shadow-md); }
+  .btn-gold { background: var(--gold); color: #fff; }
+  .btn-gold:hover { background: var(--gold-dark); box-shadow: var(--shadow-md); }
+  .btn-teal { background: var(--teal); color: #fff; }
+  .btn-teal:hover { background: var(--teal-light); box-shadow: var(--shadow-md); }
+  .btn-outline { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
+  .btn-outline:hover { background: var(--navy); color: #fff; }
+  .btn-danger { background: transparent; color: var(--red); border: 1.5px solid var(--red); }
+  .btn-danger:hover { background: var(--red); color: #fff; }
+  .btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+  .btn-xs { padding: 3px 8px; font-size: 0.7rem; border-radius: 3px; letter-spacing: 0; }
+  .btn-icon { padding: 6px 8px; min-width: 28px; }
+
+  /* ── Lists ── */
+  .list {
+    list-style: none; max-height: 220px; overflow-y: auto;
+    border: 1.5px solid var(--border-light); border-radius: var(--radius-md);
+  }
+  .list-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-bottom: 1px solid var(--border-light);
+    font-size: 0.88rem; transition: background 0.15s;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item:hover { background: var(--surface-alt); }
+  .list-item .name { font-weight: 500; color: var(--ink); }
+  .list-item .meta { font-size: 0.78rem; color: var(--ink-light); }
+  .list-item-main { display: flex; align-items: center; gap: 8px; flex:1; min-width:0; overflow:hidden; }
+
+  /* ── Tags ── */
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 0.7rem; font-weight: 500; letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .tag-red { background: rgba(194,59,34,0.08); color: var(--red); }
+  .tag-gold { background: rgba(200,150,62,0.12); color: var(--gold-dark); }
+  .tag-teal { background: rgba(45,106,79,0.08); color: var(--teal); }
+  .tag-navy { background: rgba(26,39,68,0.06); color: var(--navy); }
+
+  /* ── Record form ── */
+  .record-form {
+    display: flex; gap: 8px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .record-form > * { flex: 1; min-width: 120px; }
+  .record-form > .btn { flex: 0 0 auto; }
+  .record-form select { min-width: 130px; }
+
+  /* ── Table ── */
+  .table-wrap {
+    overflow-x: auto; border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-md); margin-bottom: 14px;
+  }
+  .table { min-width: 960px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed; }
+  thead th {
+    background: var(--navy); color: #fff; font-weight: 500;
+    font-size: 0.75rem; letter-spacing: 0.05em;
+    padding: 10px 14px; text-align: left; white-space: nowrap;
+  }
+  thead th:first-child { border-radius: var(--radius-md) 0 0 0; }
+  thead th:last-child { border-radius: 0 var(--radius-md) 0 0; }
+  tbody td {
+    padding: 10px 14px; border-bottom: 1px solid var(--border-light);
+    color: var(--ink); white-space: nowrap; vertical-align: middle;
+  }
+  tbody tr { transition: background 0.12s; }
+  tbody tr:hover { background: var(--surface-alt); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.row-editing { background: rgba(200,150,62,0.06); }
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+  .num-highlight { color: var(--red); font-weight: 700; font-size: 1rem; }
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--ink-lighter); font-size: 0.85rem;
+  }
+  .empty-state .icon { font-size: 2.2rem; margin-bottom: 6px; display: block; }
+  .empty-state .hint { font-size: 0.78rem; margin-top: 4px; color: #bbb; }
+
+  /* Detail expand */
+  .clickable-row { cursor: pointer; }
+  .clickable-row:hover { background: rgba(200,150,62,0.05); }
+  .expand-dot { font-size: 0.7rem; color: var(--ink-lighter); margin-left: 4px; }
+  .detail-row td { padding: 0; border-bottom: 1px solid var(--border-light); }
+  .detail-inner {
+    padding: 10px 14px 14px;
+    font-size: 0.8rem; color: var(--ink-light);
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+  .detail-item {
+    background: var(--surface-alt); padding: 4px 10px;
+    border-radius: var(--radius-sm); white-space: nowrap;
+  }
+
+  /* Edit inline */
+  .inline-edit-qty { width: 80px; padding: 4px 8px; text-align: center; }
+  .inline-edit-select { padding: 4px 6px; font-size: 0.8rem; }
+
+  /* ── Summary cards ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px; margin-top: 14px;
+  }
+  .summary-item {
+    text-align: center; padding: 18px 14px;
+    background: var(--surface-alt); border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    transition: transform 0.2s;
+  }
+  .summary-item:hover { transform: translateY(-1px); }
+  .summary-value {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.6rem; font-weight: 900; color: var(--red); line-height: 1.2;
+  }
+  .summary-label {
+    font-size: 0.75rem; color: var(--ink-light); margin-top: 4px; letter-spacing: 0.03em;
+  }
+
+  /* ── Header actions ── */
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* ── Scrollbar ── */
+  .list::-webkit-scrollbar, .table-wrap::-webkit-scrollbar { width:5px; height:5px; }
+  .list::-webkit-scrollbar-thumb, .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(26,26,46,0.4);
+    z-index: 2000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    backdrop-filter: blur(3px);
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 32px; max-width: 420px; width: 90%;
+    box-shadow: var(--shadow-lg); text-align: center;
+    transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+  .modal-overlay.active .modal { transform: translateY(0); }
+  .modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .modal-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.2rem; font-weight: 700; color: var(--navy); margin-bottom: 8px;
+  }
+  .modal-body { font-size: 0.9rem; color: var(--ink-light); margin-bottom: 24px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; top: 20px; right: 20px;
+    background: var(--navy); color: #fff;
+    padding: 12px 24px; border-radius: var(--radius-md);
+    font-size: 0.85rem; box-shadow: var(--shadow-lg);
+    z-index: 3000; opacity: 0; transform: translateX(40px);
+    transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+    pointer-events: none; max-width: 400px;
+  }
+  .toast.show { opacity: 1; transform: translateX(0); }
+  .toast.warn { background: var(--red); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center; padding: 28px 20px;
+    font-size: 0.75rem; color: var(--ink-lighter); letter-spacing: 0.04em;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideDown {
+    from { opacity: 0; max-height: 0; }
+    to   { opacity: 1; max-height: 200px; }
+  }
+  .card { animation: fadeInUp 0.4s ease both; }
+  .card:nth-child(2) { animation-delay: 0.06s; }
+  .card:nth-child(3) { animation-delay: 0.12s; }
+
+  @media (max-width: 700px) {
+    .header h1 { font-size: 1.8rem; }
+    .card { padding: 18px; }
+    .input-row { flex-direction: column; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .modal { padding: 24px; }
+    .card-header { flex-direction: column; align-items: flex-start; }
+    .record-form > * { min-width: 100px; flex: 1 1 40%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="header-badge">FACTORY PAYROLL SYSTEM</div>
+    <h1>雨伞厂<span class="dot">·</span>薪资计算器</h1>
+    <p class="subtitle">管理工人 · 设定岗位 · 配置单价 · 记录产量 · 自动结算</p>
+  </header>
+
+  <!-- ── Top Row ── -->
+  <div class="grid-3">
+    <!-- 岗位管理 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🔧 岗位管理</span>
+        <span class="card-count" id="positionCount">0 个</span>
+      </div>
+      <div class="input-row">
+        <input type="text" class="input" id="positionName" placeholder="岗位名称（如：缝伞工）" maxlength="20">
+        <button class="btn btn-primary" onclick="addPosition()">添加</button>
+      </div>
+      <ul class="list" id="positionList">
+        <li class="empty-state">
+          <span class="icon">🔧</span>暂无岗位
+          <div class="hint">请先添加岗位，再添加工人</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 工人管理 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">👷 工人管理</span>
+        <span class="card-count" id="workerCount">0 人</span>
+      </div>
+      <div class="input-row">
+        <select class="input" id="workerPosition">
+          <option value="">选择岗位...</option>
+        </select>
+      </div>
+      <div class="input-row">
+        <input type="text" class="input" id="workerName" placeholder="工人姓名" maxlength="20">
+        <button class="btn btn-primary" onclick="addWorker()">添加</button>
+      </div>
+      <ul class="list" id="workerList">
+        <li class="empty-state">
+          <span class="icon">👷</span>暂无工人
+          <div class="hint">请先添加岗位，再添加工人</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 雨伞类型 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">☂️ 雨伞类型与单价</span>
+        <span class="card-count" id="typeCount">0 种</span>
+      </div>
+      <div class="input-row">
+        <input type="text" class="input" id="typeName" placeholder="类型名称（如：折叠伞）" maxlength="20">
+      </div>
+      <div class="input-row">
+        <input type="number" class="input" id="pricePerDozen" placeholder="每打单价（元）" min="0" step="0.01">
+        <button class="btn btn-gold" onclick="addUmbrellaType()">添加</button>
+      </div>
+      <ul class="list" id="typeList">
+        <li class="empty-state">
+          <span class="icon">☂️</span>暂无雨伞类型
+          <div class="hint">请添加雨伞类型并设置单价</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── 记录产量 ── -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <span class="card-title">📋 记录产量</span>
+      <span class="card-count" id="recordCount">0 条记录</span>
+    </div>
+    <div class="record-form">
+      <select class="input" id="recordWorker">
+        <option value="">选择工人...</option>
+      </select>
+      <select class="input" id="recordType">
+        <option value="">选择雨伞类型...</option>
+      </select>
+      <input type="number" class="input" id="recordQuantity" placeholder="数量（打）" min="0.01" step="0.01">
+      <input type="month" class="input" id="recordMonth">
+      <button class="btn btn-gold" onclick="addRecord()">✓ 记录</button>
+    </div>
+
+    <div class="table-wrap" id="recordTableWrap" style="display:none;">
+      <div class="table">
+        <table>
+          <colgroup>
+            <col style="width:130px"><col style="width:130px"><col style="width:110px">
+            <col style="width:150px"><col style="width:120px"><col style="width:150px">
+            <col style="width:170px"><col style="width:110px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>月份</th><th>工人</th><th>岗位</th><th>雨伞类型</th>
+              <th class="num">数量（打）</th><th class="num">单价/打</th><th class="num">小计</th>
+              <th style="text-align:center">操作</th>
+            </tr>
+          </thead>
+          <tbody id="recordTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="empty-state" id="recordEmpty">
+      <span class="icon">📋</span>暂无生产记录
+      <div class="hint">选择工人、雨伞类型，输入数量和月份后点击记录</div>
+    </div>
+  </div>
+
+  <!-- ── 薪资汇总 ── -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <span class="card-title">💰 薪资汇总</span>
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" onclick="quickThisMonth()">📅 本月</button>
+        <select class="input" id="summaryMonthFilter" onchange="renderAll()" style="width:auto; flex:none; min-width:150px;">
+          <option value="">全部月份</option>
+        </select>
+        <button class="btn btn-teal btn-sm" onclick="copySummary()">📋 复制</button>
+        <button class="btn btn-danger btn-sm" onclick="clearFilteredRecords()" id="btnClearAll" style="display:none;">清空</button>
+      </div>
+    </div>
+
+    <div class="table-wrap" id="summaryTableWrap" style="display:none;">
+      <div class="table">
+        <table>
+          <colgroup>
+            <col style="width:180px"><col style="width:140px"><col style="width:180px"><col style="width:auto">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>工人</th><th>岗位</th><th class="num">生产总数（打）</th><th class="num">应付工资</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="empty-state" id="summaryEmpty">
+      <span class="icon">💳</span>暂无数据
+      <div class="hint">添加生产记录后将在此显示薪资汇总</div>
+    </div>
+
+    <div class="summary-grid" id="summaryCards"></div>
+  </div>
+
+  <footer class="footer">雨伞厂薪资计算器 · Umbrella Factory Payroll Calculator</footer>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-icon" id="modalIcon">⚠️</div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()" id="modalCancel">取消</button>
+      <button class="btn btn-danger" onclick="confirmModal()" id="modalConfirm">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   Data Store
+   ================================================================ */
+const STORAGE_KEY = 'umbrella_payroll_v2';
+
+function loadData() {
+  try {
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      raw = localStorage.getItem('umbrella_payroll_data');
+      if (raw) localStorage.setItem(STORAGE_KEY, raw);
+    }
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (!d.positions) d.positions = [];
+      const dm = defaultMonth();
+      d.records.forEach(r => { if (!r.month) r.month = dm; });
+      return d;
+    }
+  } catch(e) {}
+  return { workers:[], types:[], positions:[], records:[], nextId:1 };
+}
+
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function defaultMonth() { const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
+
+let data = loadData();
+document.getElementById('recordMonth').value = defaultMonth();
+
+/* ================================================================
+   Utils
+   ================================================================ */
+function escHtml(s) { const m={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}; return s.replace(/[&<>"']/g,c=>m[c]); }
+function fmtMoney(n) { return '¥'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtNum(n) { return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+/* ================================================================
+   Toast
+   ================================================================ */
+let toastTimer;
+function showToast(msg, warn) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast '+(warn?'warn':'');
+  clearTimeout(toastTimer);
+  requestAnimationFrame(()=>{ el.classList.add('show'); toastTimer=setTimeout(()=>el.classList.remove('show'),2400); });
+}
+
+/* ================================================================
+   Modal
+   ================================================================ */
+let modalCb = null;
+function openModal(title, body, icon, confirmText, cb, danger) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  document.getElementById('modalIcon').textContent = icon||'⚠️';
+  const btn = document.getElementById('modalConfirm');
+  btn.textContent = confirmText||'确认';
+  btn.className = 'btn '+(danger!==false?'btn-danger':'btn-primary');
+  modalCb = cb;
+  document.getElementById('modalOverlay').classList.add('active');
+  btn.focus();
+}
+function confirmModal() { document.getElementById('modalOverlay').classList.remove('active'); if(modalCb){modalCb();modalCb=null;} }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); modalCb=null; }
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+
+/* ================================================================
+   Render All
+   ================================================================ */
+function renderAll() {
+  renderPositions();
+  renderWorkers();
+  renderTypes();
+  renderRecords();
+  renderSummary();
+  updateDropdowns();
+  saveData(data);
+}
+
+/* ================================================================
+   Positions
+   ================================================================ */
+function addPosition() {
+  const n = document.getElementById('positionName').value.trim();
+  if(!n) { showToast('请输入岗位名称',true); return; }
+  if(data.positions.some(p=>p.name===n)) { showToast('该岗位已存在',true); return; }
+  data.positions.push({id:data.nextId++, name:n});
+  document.getElementById('positionName').value='';
+  renderAll(); showToast('已添加：'+n);
+}
+function removePosition(id) {
+  const p = data.positions.find(x=>x.id===id); if(!p) return;
+  if(data.workers.some(w=>w.positionId===id)) { showToast('该岗位下有工人，无法删除',true); return; }
+  openModal('删除岗位',`确定删除「${p.name}」？`,'🗑️','删除',()=>{
+    data.positions = data.positions.filter(x=>x.id!==id);
+    renderAll(); showToast('已删除');
+  });
+}
+function renderPositions() {
+  const list = document.getElementById('positionList');
+  document.getElementById('positionCount').textContent = data.positions.length+' 个';
+  if(!data.positions.length) {
+    list.innerHTML='<li class="empty-state"><span class="icon">🔧</span>暂无岗位<div class="hint">请先添加岗位，再添加工人</div></li>';
+    return;
+  }
+  list.innerHTML = data.positions.map(p=>`
+    <li class="list-item">
+      <span class="name">${escHtml(p.name)}</span>
+      <button class="btn btn-danger btn-xs" onclick="removePosition(${p.id})" title="删除">✕</button>
+    </li>`).join('');
+}
+
+/* ================================================================
+   Workers
+   ================================================================ */
+function addWorker() {
+  const name = document.getElementById('workerName').value.trim();
+  const sel = document.getElementById('workerPosition');
+  const pid = sel.value ? parseInt(sel.value) : 0;
+  if(!name) { showToast('请输入工人姓名',true); return; }
+  if(!pid) { showToast('请选择岗位',true); return; }
+  if(data.workers.some(w=>w.name===name && w.positionId===pid)) { showToast('该岗位下已存在同名工人',true); return; }
+  data.workers.push({id:data.nextId++, name, positionId:pid});
+  document.getElementById('workerName').value='';
+  renderAll();
+  const pos = data.positions.find(p=>p.id===pid);
+  showToast('已添加：'+name+'（'+(pos?pos.name:'')+'）');
+}
+function removeWorker(id) {
+  const w = data.workers.find(x=>x.id===id); if(!w) return;
+  const has = data.records.some(r=>r.workerId===id);
+  openModal('删除工人', has?`「${w.name}」有生产记录，删除后将一并清除。确定删除？`:`确定删除「${w.name}」？`, has?'⚠️':'🗑️', has?'确认删除':'删除', ()=>{
+    if(has) data.records = data.records.filter(r=>r.workerId!==id);
+    data.workers = data.workers.filter(x=>x.id!==id);
+    renderAll(); showToast('已删除');
+  }, has);
+}
+function renderWorkers() {
+  const list = document.getElementById('workerList');
+  document.getElementById('workerCount').textContent = data.workers.length+' 人';
+  if(!data.workers.length) {
+    list.innerHTML='<li class="empty-state"><span class="icon">👷</span>暂无工人<div class="hint">请先添加岗位，再添加工人</div></li>';
+    return;
+  }
+  list.innerHTML = data.workers.map(w=>{
+    const pos = data.positions.find(p=>p.id===w.positionId);
+    return `<li class="list-item">
+      <span class="list-item-main">
+        <span class="name">${escHtml(w.name)}</span>
+        ${pos?`<span class="tag tag-gold">${escHtml(pos.name)}</span>`:'<span class="tag tag-red">无岗位</span>'}
+      </span>
+      <button class="btn btn-danger btn-xs" onclick="removeWorker(${w.id})" title="删除">✕</button>
+    </li>`;
+  }).join('');
+}
+
+/* ================================================================
+   Umbrella Types
+   ================================================================ */
+function addUmbrellaType() {
+  const name = document.getElementById('typeName').value.trim();
+  const price = parseFloat(document.getElementById('pricePerDozen').value);
+  if(!name) { showToast('请输入类型名称',true); return; }
+  if(isNaN(price)||price<=0) { showToast('请输入有效单价',true); return; }
+  if(data.types.some(t=>t.name===name)) { showToast('该类型已存在',true); return; }
+  data.types.push({id:data.nextId++, name, pricePerDozen:price});
+  document.getElementById('typeName').value='';
+  document.getElementById('pricePerDozen').value='';
+  renderAll(); showToast(`已添加：${name}（${fmtMoney(price)}/打）`);
+}
+function removeType(id) {
+  const t = data.types.find(x=>x.id===id); if(!t) return;
+  const has = data.records.some(r=>r.typeId===id);
+  openModal('删除类型', has?`「${t.name}」有生产记录，删除后将一并清除。确定删除？`:`确定删除「${t.name}」？`, has?'⚠️':'🗑️', has?'确认删除':'删除', ()=>{
+    if(has) data.records = data.records.filter(r=>r.typeId!==id);
+    data.types = data.types.filter(x=>x.id!==id);
+    renderAll(); showToast('已删除');
+  }, has);
+}
+function renderTypes() {
+  const list = document.getElementById('typeList');
+  document.getElementById('typeCount').textContent = data.types.length+' 种';
+  if(!data.types.length) {
+    list.innerHTML='<li class="empty-state"><span class="icon">☂️</span>暂无雨伞类型<div class="hint">请添加雨伞类型并设置单价</div></li>';
+    return;
+  }
+  list.innerHTML = data.types.map(t=>`
+    <li class="list-item">
+      <span class="list-item-main">
+        <span class="name">${escHtml(t.name)}</span>
+        <span class="meta">${fmtMoney(t.pricePerDozen)} / 打</span>
+      </span>
+      <button class="btn btn-danger btn-xs" onclick="removeType(${t.id})" title="删除">✕</button>
+    </li>`).join('');
+}
+
+/* ================================================================
+   Records
+   ================================================================ */
+function addRecord() {
+  const ws = document.getElementById('recordWorker');
+  const ts = document.getElementById('recordType');
+  const qty = parseFloat(document.getElementById('recordQuantity').value);
+  const month = document.getElementById('recordMonth').value;
+  const wid = ws.value ? parseInt(ws.value) : 0;
+  const tid = ts.value ? parseInt(ts.value) : 0;
+  if(!wid) { showToast('请选择工人',true); return; }
+  if(!tid) { showToast('请选择雨伞类型',true); return; }
+  if(isNaN(qty)||qty<=0) { showToast('请输入有效数量',true); return; }
+  if(!month) { showToast('请选择月份',true); return; }
+  data.records.push({id:data.nextId++, workerId:wid, typeId:tid, quantity:qty, month, timestamp:Date.now()});
+  document.getElementById('recordQuantity').value='';
+  renderAll();
+  const w = data.workers.find(x=>x.id===wid);
+  const t = data.types.find(x=>x.id===tid);
+  showToast(`已记录：${w.name} · ${month} · ${qty}打 ${t.name}（${fmtMoney(qty*t.pricePerDozen)}）`);
+}
+function removeRecord(id) {
+  openModal('删除记录','确定删除这条生产记录？','🗑️','删除',()=>{
+    data.records = data.records.filter(r=>r.id!==id);
+    renderAll(); showToast('已删除');
+  }, false);
+}
+function startEditRecord(id) {
+  const r = data.records.find(x=>x.id===id); if(!r) return;
+  const tbody = document.getElementById('recordTableBody');
+  const rows = tbody.querySelectorAll('tr');
+  const sorted = [...data.records].reverse();
+  const idx = sorted.findIndex(x=>x.id===id);
+  if(idx<0||idx>=rows.length) return;
+  rows[idx].classList.add('row-editing');
+  const t = data.types.find(x=>x.id===r.typeId);
+  const w = data.workers.find(x=>x.id===r.workerId);
+  const pos = w ? data.positions.find(p=>p.id===w.positionId) : null;
+  rows[idx].innerHTML = `
+    <td><span class="tag tag-red">${escHtml(r.month||'—')}</span></td>
+    <td>${escHtml(w?w.name:'（已删除）')}</td>
+    <td><span class="tag tag-gold">${escHtml(pos?pos.name:'—')}</span></td>
+    <td>
+      <select class="inline-edit-select" id="editType_${r.id}">
+        ${data.types.map(tp=>`<option value="${tp.id}" ${tp.id===r.typeId?'selected':''}>${escHtml(tp.name)}</option>`).join('')}
+      </select>
+    </td>
+    <td class="num"><input type="number" class="input inline-edit-qty" id="editQty_${r.id}" value="${r.quantity}" min="0.01" step="0.01" style="width:80px;text-align:center;"></td>
+    <td class="num">${fmtMoney(t?t.pricePerDozen:0)}</td>
+    <td class="num num-highlight">—</td>
+    <td style="text-align:center">
+      <button class="btn btn-teal btn-xs" onclick="saveEditRecord(${r.id})" title="保存">✓</button>
+      <button class="btn btn-outline btn-xs" onclick="renderAll()" title="取消">✕</button>
+    </td>`;
+  const qtyEl = document.getElementById('editQty_'+r.id);
+  if(qtyEl) { qtyEl.focus(); qtyEl.select(); }
+}
+function saveEditRecord(id) {
+  const r = data.records.find(x=>x.id===id); if(!r) return;
+  const newTid = parseInt(document.getElementById('editType_'+id).value);
+  const newQty = parseFloat(document.getElementById('editQty_'+id).value);
+  if(isNaN(newQty)||newQty<=0) { showToast('请输入有效数量',true); return; }
+  r.typeId = newTid; r.quantity = newQty;
+  renderAll(); showToast('已更新');
+}
+function clearFilteredRecords() {
+  const filter = document.getElementById('summaryMonthFilter').value;
+  if(!data.records.length) return;
+  let target, content;
+  if(filter) {
+    target = data.records.filter(r=>r.month===filter);
+    if(!target.length) { showToast('该月份无记录',true); return; }
+    content = `确定清空「${filter}」的 ${target.length} 条记录？`;
+  } else {
+    content = `确定清空全部 ${data.records.length} 条记录？`;
+  }
+  openModal('清空记录', content+' 此操作不可撤销。', '⚠️', '清空', ()=>{
+    data.records = filter ? data.records.filter(r=>r.month!==filter) : [];
+    renderAll(); showToast('已清空');
+  });
+}
+function renderRecords() {
+  const tbody = document.getElementById('recordTableBody');
+  const wrap = document.getElementById('recordTableWrap');
+  const empty = document.getElementById('recordEmpty');
+  document.getElementById('recordCount').textContent = data.records.length+' 条记录';
+  document.getElementById('btnClearAll').style.display = data.records.length?'':'none';
+  if(!data.records.length) {
+    wrap.style.display='none'; empty.style.display='';
+    return;
+  }
+  wrap.style.display=''; empty.style.display='none';
+  const sorted = [...data.records].reverse();
+  tbody.innerHTML = sorted.map(r=>{
+    const w = data.workers.find(x=>x.id===r.workerId);
+    const t = data.types.find(x=>x.id===r.typeId);
+    const pos = w ? data.positions.find(p=>p.id===w.positionId) : null;
+    const workerName = w?w.name:'（已删除）';
+    const positionName = pos?pos.name:(w?'—':'（已删除）');
+    const typeName = t?t.name:'（已删除）';
+    const price = t?t.pricePerDozen:0;
+    const subtotal = r.quantity*price;
+    return `<tr ondblclick="startEditRecord(${r.id})" title="双击编辑">
+      <td><span class="tag tag-red">${escHtml(r.month||'—')}</span></td>
+      <td>${escHtml(workerName)}</td>
+      <td><span class="tag tag-gold">${escHtml(positionName)}</span></td>
+      <td><span class="tag tag-teal">${escHtml(typeName)}</span></td>
+      <td class="num">${fmtNum(r.quantity)}</td>
+      <td class="num">${fmtMoney(price)}</td>
+      <td class="num num-highlight">${fmtMoney(subtotal)}</td>
+      <td style="text-align:center">
+        <button class="btn btn-outline btn-xs" onclick="startEditRecord(${r.id})" title="编辑" style="margin-right:4px;">✎</button>
+        <button class="btn btn-danger btn-xs" onclick="removeRecord(${r.id})" title="删除">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ================================================================
+   Summary
+   ================================================================ */
+function quickThisMonth() {
+  const m = defaultMonth();
+  const sel = document.getElementById('summaryMonthFilter');
+  if([...sel.options].some(o=>o.value===m)) sel.value = m;
+  else { sel.value = ''; showToast('本月暂无记录',true); }
+  renderAll();
+}
+function toggleDetail(workerId) {
+  const row = document.getElementById('detailRow_'+workerId);
+  if(row) { row.remove(); return; }
+  const tbody = document.getElementById('summaryTableBody');
+  const rows = tbody.querySelectorAll('tr');
+  const target = [...rows].find(r=>r.dataset.workerId==workerId);
+  if(!target) return;
+  const selectedMonth = document.getElementById('summaryMonthFilter').value;
+  const filtered = selectedMonth ? data.records.filter(r=>r.month===selectedMonth) : data.records;
+  const wRecs = filtered.filter(r=>r.workerId===workerId);
+  const byType = {};
+  for(const r of wRecs) {
+    const t = data.types.find(x=>x.id===r.typeId);
+    const key = t?t.name:'未知';
+    if(!byType[key]) byType[key] = {qty:0, price:t?t.pricePerDozen:0};
+    byType[key].qty += r.quantity;
+  }
+  const html = Object.entries(byType).map(([name,info])=>
+    `<span class="detail-item">${escHtml(name)}：${fmtNum(info.qty)} 打 × ${fmtMoney(info.price)} = ${fmtMoney(info.qty*info.price)}</span>`
+  ).join('');
+  const tr = document.createElement('tr');
+  tr.id = 'detailRow_'+workerId;
+  tr.className = 'detail-row';
+  tr.innerHTML = `<td colspan="4"><div class="detail-inner">${html}</div></td>`;
+  tr.style.animation = 'slideDown 0.25s ease';
+  target.after(tr);
+}
+function copySummary() {
+  const tbody = document.getElementById('summaryTableBody');
+  const rows = tbody.querySelectorAll('tr:not(.detail-row)');
+  if(!rows.length||rows[0].querySelector('.empty-state')) { showToast('暂无数据可复制',true); return; }
+  const m = document.getElementById('summaryMonthFilter').value;
+  const title = m?`雨伞厂薪资汇总 — ${m}`:'雨伞厂薪资汇总 — 全部月份';
+  let text = title+'\n'+'─'.repeat(40)+'\n工人\t岗位\t产量(打)\t工资\n';
+  rows.forEach(r=>{
+    const cells = r.querySelectorAll('td');
+    if(cells.length>=4) text += `${cells[0].textContent.trim()}\t${cells[1].textContent.trim()}\t${cells[2].textContent.trim()}\t${cells[3].textContent.trim()}\n`;
+  });
+  text += '─'.repeat(40)+'\n';
+  document.querySelectorAll('#summaryCards .summary-item').forEach(c=>{
+    text += `${c.querySelector('.summary-label').textContent.trim()}：${c.querySelector('.summary-value').textContent.trim()}\n`;
+  });
+  navigator.clipboard.writeText(text).then(()=>showToast('已复制到剪贴板 ✓')).catch(()=>showToast('复制失败',true));
+}
+function renderSummary() {
+  const tbody = document.getElementById('summaryTableBody');
+  const wrap = document.getElementById('summaryTableWrap');
+  const empty = document.getElementById('summaryEmpty');
+  const cards = document.getElementById('summaryCards');
+  const sel = document.getElementById('summaryMonthFilter');
+
+  const months = [...new Set(data.records.map(r=>r.month).filter(Boolean))].sort();
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">全部月份</option>'+months.map(m=>`<option value="${m}" ${m===prev?'selected':''}>${m}</option>`).join('');
+  const selected = sel.value;
+  const filtered = selected ? data.records.filter(r=>r.month===selected) : data.records;
+  document.getElementById('btnClearAll').textContent = selected?`清空「${selected}」记录`:'清空所有记录';
+
+  if(!data.workers.length||!filtered.length) {
+    wrap.style.display='none'; empty.style.display=''; cards.innerHTML='';
+    return;
+  }
+  wrap.style.display=''; empty.style.display='none';
+
+  const summary = {};
+  for(const r of filtered) {
+    if(!summary[r.workerId]) summary[r.workerId]={totalQty:0,totalSalary:0};
+    const t = data.types.find(x=>x.id===r.typeId);
+    const price = t?t.pricePerDozen:0;
+    summary[r.workerId].totalQty += r.quantity;
+    summary[r.workerId].totalSalary += r.quantity*price;
+  }
+  const rows = data.workers.filter(w=>summary[w.id]).map(w=>{
+    const s = summary[w.id];
+    const pos = data.positions.find(p=>p.id===w.positionId);
+    return {id:w.id, name:w.name, positionName:pos?pos.name:'—', qty:s.totalQty, salary:s.totalSalary};
+  });
+  const grandTotal = rows.reduce((s,r)=>s+r.salary,0);
+  const grandQty = rows.reduce((s,r)=>s+r.qty,0);
+  const label = selected?`「${selected}」`:'';
+
+  tbody.innerHTML = rows.map(r=>`
+    <tr class="clickable-row" data-worker-id="${r.id}" onclick="toggleDetail(${r.id})" title="点击查看明细">
+      <td><strong>${escHtml(r.name)}</strong> <span class="expand-dot">▸</span></td>
+      <td><span class="tag tag-gold">${escHtml(r.positionName)}</span></td>
+      <td class="num">${fmtNum(r.qty)} 打</td>
+      <td class="num num-highlight">${fmtMoney(r.salary)}</td>
+    </tr>`).join('');
+
+  cards.innerHTML = `
+    <div class="summary-item">
+      <div class="summary-value">${rows.length}</div>
+      <div class="summary-label">${label}在职工人数</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value">${fmtNum(grandQty)}</div>
+      <div class="summary-label">${label}总产量（打）</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value">${fmtMoney(grandTotal)}</div>
+      <div class="summary-label">${label}应付总工资</div>
+    </div>`;
+}
+
+/* ================================================================
+   Dropdowns
+   ================================================================ */
+function updateDropdowns() {
+  const ws = document.getElementById('recordWorker');
+  const ts = document.getElementById('recordType');
+  const ps = document.getElementById('workerPosition');
+  const pw=ws.value, pt=ts.value, pp=ps.value;
+  ps.innerHTML = '<option value="">选择岗位...</option>'+data.positions.map(p=>`<option value="${p.id}" ${p.id==pp?'selected':''}>${escHtml(p.name)}</option>`).join('');
+  ws.innerHTML = '<option value="">选择工人...</option>'+data.workers.map(w=>{
+    const pos = data.positions.find(p=>p.id===w.positionId);
+    const label = pos?`${w.name}（${pos.name}）`:w.name;
+    return `<option value="${w.id}" ${w.id==pw?'selected':''}>${escHtml(label)}</option>`;
+  }).join('');
+  ts.innerHTML = '<option value="">选择雨伞类型...</option>'+data.types.map(t=>`<option value="${t.id}" ${t.id==pt?'selected':''}>${escHtml(t.name)}（${fmtMoney(t.pricePerDozen)}/打）</option>`).join('');
+}
+
+/* ================================================================
+   Init & Keyboard
+   ================================================================ */
+renderAll();
+
+document.getElementById('positionName').addEventListener('keydown',e=>{if(e.key==='Enter')addPosition();});
+document.getElementById('workerName').addEventListener('keydown',e=>{if(e.key==='Enter')addWorker();});
+document.getElementById('typeName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('pricePerDozen').focus();});
+document.getElementById('pricePerDozen').addEventListener('keydown',e=>{if(e.key==='Enter')addUmbrellaType();});
+document.getElementById('recordQuantity').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('recordMonth').focus();});
+document.getElementById('recordMonth').addEventListener('keydown',e=>{if(e.key==='Enter')addRecord();});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.id.startsWith('editQty_')){
+    saveEditRecord(parseInt(document.activeElement.id.replace('editQty_','')));
+  }
+});
+</script>
+</body>
+</html>
